@@ -33,10 +33,20 @@ def logout_shop(request):
         del request.session['active_shop_id']
     return redirect('setup_shop')
 
+def leaderboard_page(request):
+    shop = get_active_shop(request)
+    if not shop: return redirect("setup_shop")
+    window = request.GET.get("window", "1")
+    today = date.today()
+    if window == "3": start_date = today - timedelta(days=2)
+    elif window == "7": start_date = today - timedelta(days=6)
+    else: start_date = today
+    leaderboard = DailyDeployment.objects.filter(shop=shop, date__gte=start_date).values("promoter__id", "promoter__name").annotate(total_cash=Sum("cash_owed")).order_by("-total_cash")
+    return render(request, "main/leaderboard.html", {"leaderboard": leaderboard, "active_window": window, "shop": shop})
+
 def dashboard(request):
     shop = get_active_shop(request)
-    if not shop:
-        return redirect("setup_shop")
+    if not shop: return redirect("setup_shop")
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -46,19 +56,15 @@ def dashboard(request):
             cartons = int(request.POST.get("cartons_in_stock", "0") or 0)
             pieces = int(request.POST.get("pieces_in_stock", "0") or 0)
             items_per_crt = int(request.POST.get("items_per_carton", "1") or 1)
-            if items_per_crt < 1: items_per_crt = 1
             existing = Product.objects.filter(shop=shop, name__iexact=name).first()
             if existing:
                 add_total = (cartons * existing.items_per_carton) + pieces
                 existing.initial_stock += add_total
                 existing.save()
                 existing.recalculate()
-                messages.success(request, f" Added stock to '{existing.name}'!")
+                messages.success(request, f"📦 Added stock to '{existing.name}'!")
             else:
-                prod = Product(shop=shop, name=name, items_per_carton=items_per_crt,
-                    price_per_carton=Decimal(request.POST.get("price_per_carton", "0.00")),
-                    price_per_piece=Decimal(request.POST.get("price_per_piece", "0.00")),
-                    cartons_in_stock=cartons, pieces_in_stock=pieces)
+                prod = Product(shop=shop, name=name, items_per_carton=items_per_crt, price_per_carton=Decimal(request.POST.get("price_per_carton", "0.00")), price_per_piece=Decimal(request.POST.get("price_per_piece", "0.00")), cartons_in_stock=cartons, pieces_in_stock=pieces)
                 prod.save()
                 prod.recalculate()
                 messages.success(request, f"📦 New product '{name}' registered!")
@@ -69,17 +75,14 @@ def dashboard(request):
             cartons = int(request.POST.get("cartons", "0") or 0)
             pieces = int(request.POST.get("pieces", "0") or 0)
             prod = Product.objects.filter(shop=shop, pk=product_id).first()
-            if not prod:
-                messages.error(request, "❌ Product not found.")
-            elif cartons == 0 and pieces == 0:
-                messages.error(request, "❌ Enter at least 1 carton or 1 piece.")
+            if not prod: messages.error(request, "❌ Product not found.")
+            elif cartons == 0 and pieces == 0: messages.error(request, "❌ Enter at least 1 carton or 1 piece.")
             else:
                 items_per = int(prod.items_per_carton or 1)
                 delta = (cartons * items_per) + pieces
                 if direction == "remove":
                     current = int(prod.total_pieces_in_stock or 0)
-                    if delta > current:
-                        messages.error(request, f"❌ Only {prod.cartons_in_stock} crt / {prod.pieces_in_stock} pcs in warehouse.")
+                    if delta > current: messages.error(request, f"❌ Only {prod.cartons_in_stock} crt / {prod.pieces_in_stock} pcs in warehouse.")
                     else:
                         prod.initial_stock = max(0, int(prod.initial_stock or 0) - delta)
                         prod.save(update_fields=["initial_stock"])
@@ -89,7 +92,7 @@ def dashboard(request):
                     prod.initial_stock = int(prod.initial_stock or 0) + delta
                     prod.save(update_fields=["initial_stock"])
                     prod.recalculate()
-                    messages.success(request, f"📥 Added {cartons} crt / {pieces} pcs to '{prod.name}'.")
+                    messages.success(request, f" Added {cartons} crt / {pieces} pcs to '{prod.name}'.")
 
         elif action == "add_promoter":
             name = request.POST.get("name", "").strip()
@@ -97,25 +100,23 @@ def dashboard(request):
             if phone:
                 pattern = r'^(?:\+233|0)(20|24|26|27|28|50|54|55|56|59|53)\d{7}$'
                 if not re.match(pattern, phone):
-                    messages.error(request, " Invalid phone number. Use format: 0241234567 or +233241234567")
+                    messages.error(request, "❌ Invalid phone number. Use format: 0241234567 or +233241234567")
                     return redirect("dashboard")
             prom = Promoter.objects.create(shop=shop, name=name, phone_number=phone)
-            messages.success(request, f" Promoter '{prom.name}' saved!")
+            messages.success(request, f"👤 Promoter '{prom.name}' saved!")
 
         elif action == "edit_promoter":
             promoter_id = request.POST.get("promoter_id")
             new_name = request.POST.get("name", "").strip()
             new_phone = request.POST.get("phone_number", "").strip()
             prom = Promoter.objects.filter(shop=shop, pk=promoter_id).first()
-            if not prom:
-                messages.error(request, " Promoter not found.")
-            elif not new_name:
-                messages.error(request, "❌ Name cannot be empty.")
+            if not prom: messages.error(request, "❌ Promoter not found.")
+            elif not new_name: messages.error(request, "❌ Name cannot be empty.")
             else:
                 if new_phone:
                     pattern = r'^(?:\+233|0)(20|24|26|27|28|50|54|55|56|59|53)\d{7}$'
                     if not re.match(pattern, new_phone):
-                        messages.error(request, "❌ Invalid phone number. Use format: 0241234567 or +233241234567")
+                        messages.error(request, "❌ Invalid phone number format.")
                         return redirect("dashboard")
                 prom.name = new_name
                 prom.phone_number = new_phone
@@ -125,28 +126,24 @@ def dashboard(request):
         elif action == "delete_promoter":
             promoter_id = request.POST.get("promoter_id")
             prom = Promoter.objects.filter(shop=shop, pk=promoter_id).first()
-            if not prom:
-                messages.error(request, "❌ Promoter not found.")
+            if not prom: messages.error(request, "❌ Promoter not found.")
             else:
                 has_records = DailyDeployment.objects.filter(promoter=prom).exists()
-                if has_records:
-                    messages.error(request, f"❌ Cannot delete '{prom.name}'. They have dispatch records.")
+                if has_records: messages.error(request, f"❌ Cannot delete '{prom.name}'. They have dispatch records.")
                 else:
                     prom_name = prom.name
                     prom.delete()
-                    messages.success(request, f"🗑️ Promoter '{prom_name}' deleted.")
+                    messages.success(request, f"️ Promoter '{prom_name}' deleted.")
 
         elif action == "dispatch_stock":
             promoter_id = request.POST.get("promoter")
             product_id = request.POST.get("product")
             c_taken = int(request.POST.get("cartons_taken", "0") or 0)
             p_taken = int(request.POST.get("pieces_taken", "0") or 0)
-            if c_taken == 0 and p_taken == 0:
-                messages.error(request, "❌ Enter at least 1 carton or 1 piece.")
+            if c_taken == 0 and p_taken == 0: messages.error(request, "❌ Enter at least 1 carton or 1 piece.")
             else:
                 product = Product.objects.filter(shop=shop, pk=product_id).first()
-                if not product:
-                    messages.error(request, "❌ Product not found.")
+                if not product: messages.error(request, "❌ Product not found.")
                 else:
                     items_per = int(product.items_per_carton or 1)
                     requested_pieces = (c_taken * items_per) + p_taken
@@ -166,19 +163,17 @@ def dashboard(request):
                             ActivityLog.record(event_type=ActivityLog.DISPATCH, promoter_name=promoter.name, product_name=product.name, cartons=c_taken, pieces=p_taken, label=f"Dispatched {c_taken} crt / {p_taken} pcs to {promoter.name}", shop=shop)
                         except ValidationError as e:
                             msg = e.messages[0] if hasattr(e, "messages") else str(e)
-                            messages.error(request, f" {msg}")
+                            messages.error(request, f"❌ {msg}")
 
         elif action == "reconcile_return":
             promoter_id = request.POST.get("promoter")
             product_id = request.POST.get("product")
             c_ret = int(request.POST.get("cartons_returned", "0") or 0)
             p_ret = int(request.POST.get("pieces_returned", "0") or 0)
-            if c_ret == 0 and p_ret == 0:
-                messages.error(request, "❌ Enter at least 1 carton or 1 piece to return.")
+            if c_ret == 0 and p_ret == 0: messages.error(request, " Enter at least 1 carton or 1 piece to return.")
             else:
                 dep = DailyDeployment.objects.filter(shop=shop, promoter_id=promoter_id, product_id=product_id, date=date.today()).first()
-                if not dep:
-                    messages.error(request, " No matching morning dispatch found for this agent today!")
+                if not dep: messages.error(request, "❌ No matching morning dispatch found for this agent today!")
                 else:
                     new_c_ret = dep.cartons_returned + c_ret
                     new_p_ret = dep.pieces_returned + p_ret
@@ -203,8 +198,7 @@ def dashboard(request):
             target = request.POST.get("target")
             unit_type = request.POST.get("unit_type")
             qty = int(request.POST.get("quantity", "0") or 0)
-            if not dep or qty <= 0:
-                messages.error(request, "❌ Invalid adjustment.")
+            if not dep or qty <= 0: messages.error(request, "❌ Invalid adjustment.")
             else:
                 try:
                     nc_taken, np_taken, nc_ret, np_ret = dep.cartons_taken, dep.pieces_taken, dep.cartons_returned, dep.pieces_returned
@@ -233,7 +227,7 @@ def dashboard(request):
                         ActivityLog.record(event_type=ActivityLog.CORRECTION, promoter_name=promoter_name, product_name=product_name, cartons=adj_cartons, pieces=adj_pieces, label="Undo: mistake fixed, stock restored", business_date=biz_date, shop=shop)
                     else:
                         DailyDeployment(pk=dep.pk, shop=shop, promoter_id=dep.promoter_id, product_id=dep.product_id, date=dep.date, cartons_taken=nc_taken, pieces_taken=np_taken, cartons_returned=nc_ret, pieces_returned=np_ret).save()
-                        messages.success(request, "🎯 Entry adjusted and stock re-balanced!")
+                        messages.success(request, " Entry adjusted and stock re-balanced!")
                         side = "dispatched" if target == "dispatched" else "returned"
                         ActivityLog.record(event_type=ActivityLog.CORRECTION, promoter_name=promoter_name, product_name=product_name, cartons=adj_cartons, pieces=adj_pieces, label=f"Correction: removed {adj_cartons} crt / {adj_pieces} pcs from {side}", business_date=biz_date, shop=shop)
                 except ValidationError as e:
@@ -242,8 +236,7 @@ def dashboard(request):
 
         elif action == "nuke_entry":
             dep = DailyDeployment.objects.filter(shop=shop, id=request.POST.get("deployment_id")).first()
-            if not dep:
-                messages.error(request, "❌ Entry not found.")
+            if not dep: messages.error(request, "❌ Entry not found.")
             else:
                 promoter_name, product_name, product, biz_date = dep.promoter.name, dep.product.name, dep.product, dep.date
                 old_cash = dep.cash_owed
@@ -268,9 +261,7 @@ def dashboard(request):
 
         return redirect("dashboard")
 
-    for p in Product.objects.filter(shop=shop):
-        p.recalculate()
-        
+    for p in Product.objects.filter(shop=shop): p.recalculate()
     deployments = DailyDeployment.objects.filter(shop=shop, date=date.today()).order_by("-id")
     promoter_records = {}
     for d in deployments:
@@ -279,7 +270,6 @@ def dashboard(request):
             promoter_records[key] = {"promoter_name": d.promoter.name, "items": [], "grand_total": Decimal("0.00")}
         promoter_records[key]["items"].append(d)
         promoter_records[key]["grand_total"] += d.cash_owed
-
     cash_outstanding = sum(c["grand_total"] for c in promoter_records.values())
 
     context = {
@@ -291,23 +281,9 @@ def dashboard(request):
     }
     return render(request, "main/dashboard.html", context)
 
-def leaderboard_page(request):
-    shop = get_active_shop(request)
-    if not shop:
-        return redirect("setup_shop")
-    window = request.GET.get("window", "1")
-    today = date.today()
-    if window == "3": start_date = today - timedelta(days=2)
-    elif window == "7": start_date = today - timedelta(days=6)
-    else: start_date = today
-    leaderboard = DailyDeployment.objects.filter(shop=shop, date__gte=start_date).values("promoter__id", "promoter__name").annotate(total_cash=Sum("cash_owed")).order_by("-total_cash")
-    context = {"leaderboard": leaderboard, "active_window": window, "shop": shop}
-    return render(request, "main/leaderboard.html", context)
-
 def statements(request):
     shop = get_active_shop(request)
-    if not shop:
-        return redirect("setup_shop")
+    if not shop: return redirect("setup_shop")
     date_str = request.GET.get("date", "").strip()
     if date_str:
         try: selected = date.fromisoformat(date_str)
@@ -317,10 +293,8 @@ def statements(request):
     promoter_filter = request.GET.get("promoter", "").strip()
     logs_qs = ActivityLog.objects.filter(shop=shop, business_date=selected)
     promoter_names = list(logs_qs.order_by("promoter_name").values_list("promoter_name", flat=True).distinct())
-    if event_filter in ("dispatch", "return", "correction", "delete"):
-        logs_qs = logs_qs.filter(event_type=event_filter)
-    if promoter_filter:
-        logs_qs = logs_qs.filter(promoter_name=promoter_filter)
+    if event_filter in ("dispatch", "return", "correction", "delete"): logs_qs = logs_qs.filter(event_type=event_filter)
+    if promoter_filter: logs_qs = logs_qs.filter(promoter_name=promoter_filter)
     logs = logs_qs.order_by("-created_at")
     today = date.today()
     yesterday = today - timedelta(days=1)
