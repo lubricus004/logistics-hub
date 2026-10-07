@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create Your Shop — Logistics Hub</title>
+<style>
+:root {
+  --g-50:#f0fdf4; --g-100:#dcfce7; --g-200:#bbf7d0;
+  --g-500:#22c55e; --g-600:#16a34a; --g-700:#15803d; --g-800:#166534;
+  --white:#ffffff; --gray-200:#e5e7eb; --gray-400:#9ca3af; --gray-500:#6b7280;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, var(--g-50) 0%, var(--white) 100%);
+  color: var(--gray-700);
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.card {
+  background: var(--white);
+  border: 1px solid var(--g-200);
+  border-radius: 20px;
+  padding: 40px 32px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 20px 50px rgba(20,83,45,0.12);
+}
+.logo {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--g-600), var(--g-500));
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(22,163,74,0.3);
+}
+h1 {
+  font-size: 1.6rem; font-weight: 700; color: var(--g-800);
+  margin-bottom: 8px; letter-spacing: -0.02em;
+}
+.subtitle {
+  color: var(--gray-500); font-size: 0.9rem; line-height: 1.5;
+  margin-bottom: 28px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-size: 0.8rem; font-weight: 600;
+  color: var(--gray-500); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.form-group input {
+  width: 100%; padding: 14px 16px;
+  border: 1.5px solid var(--gray-200); border-radius: 12px;
+  background: var(--g-50); color: var(--gray-900);
+  font-size: 1rem; font-family: inherit; outline: none;
+  transition: all 0.15s;
+}
+.form-group input:focus {
+  border-color: var(--g-500);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+}
+.form-group input::placeholder { color: var(--gray-400); }
+.btn {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--g-600), var(--g-500));
+  color: white; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+  margin-top: 8px;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(22,163,74,0.3); }
+.btn:active { transform: scale(0.98); }
+.toast {
+  background: #ef4444; color: white;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 0.875rem; font-weight: 600; margin-bottom: 16px;
+}
+.toast.success { background: var(--g-600); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">📦</div>
+  <h1>Create Your Shop</h1>
+  <p class="subtitle">Enter your shop name to get started. You'll be able to add products, register promoters, and manage dispatches.</p>
+  
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast {% if 'success' in message.tags %}success{% endif %}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Shop Name</label>
+      <input type="text" name="shop_name" placeholder="e.g. YRN Electronics" required autofocus>
+    </div>
+    <button type="submit" class="btn">Create Shop & Start →</button>
+  </form>
+</div>
+</body>
+</html>

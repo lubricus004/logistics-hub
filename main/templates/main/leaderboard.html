@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard — {{ shop.name }}</title>
+<style>
+:root {
+  --g-50:#f0fdf4; --g-100:#dcfce7; --g-200:#bbf7d0;
+  --g-500:#22c55e; --g-600:#16a34a; --g-700:#15803d; --g-800:#166534;
+  --white:#ffffff; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-400:#9ca3af; --gray-500:#6b7280; --gray-700:#374151;
+  --radius:14px; --shadow:0 1px 3px rgba(20,83,45,0.06), 0 8px 24px rgba(20,83,45,0.08);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--g-50);
+  color: var(--gray-700);
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { max-width: 600px; margin: 0 auto; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--g-200);
+}
+.header h1 {
+  font-size: 1.3rem; font-weight: 700; color: var(--g-800);
+  letter-spacing: -0.02em;
+}
+.header .shop {
+  font-size: 0.85rem; color: var(--gray-500); margin-top: 2px;
+}
+.btn-back {
+  background: var(--white); color: var(--g-700);
+  border: 1.5px solid var(--gray-200);
+  padding: 8px 16px; border-radius: 10px;
+  font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; transition: all 0.15s;
+}
+.btn-back:hover { background: var(--g-50); border-color: var(--g-500); }
+.window-toggles {
+  display: flex; gap: 6px; margin-bottom: 20px;
+  background: var(--gray-100); padding: 4px; border-radius: 10px;
+}
+.window-toggles a {
+  flex: 1; padding: 10px 12px; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 600; text-decoration: none;
+  color: var(--gray-500); text-align: center; transition: all 0.15s;
+}
+.window-toggles a.active {
+  background: var(--white); color: var(--g-700);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.rank-card {
+  background: var(--white);
+  border: 1px solid var(--g-200);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+.rank-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  width: 50px;
+  text-align: center;
+  color: var(--gray-400);
+}
+.rank-number.gold { color: #f59e0b; }
+.rank-number.silver { color: #9ca3af; }
+.rank-number.bronze { color: #d97706; }
+.rank-name {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+.rank-bar {
+  height: 8px;
+  background: var(--g-100);
+  border-radius: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+.rank-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--g-600), var(--g-500));
+  border-radius: 4px;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-500);
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--g-200);
+}
+.empty-icon {
+  width: 56px; height: 56px; margin: 0 auto 14px;
+  background: var(--g-100); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>🏆 Leaderboard</h1>
+      <div class="shop">{{ shop.name }}</div>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn-back">← Back</a>
+  </div>
+
+  <div class="window-toggles">
+    <a href="?window=1" class="{% if active_window == '1' %}active{% endif %}">Today</a>
+    <a href="?window=3" class="{% if active_window == '3' %}active{% endif %}">Last 3 Days</a>
+    <a href="?window=7" class="{% if active_window == '7' %}active{% endif %}">Last 7 Days</a>
+  </div>
+
+  {% if leaderboard %}
+    {% for entry in leaderboard %}
+    <div class="rank-card">
+      <div class="rank-number {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+        {% if forloop.counter == 1 %}🥇
+        {% elif forloop.counter == 2 %}🥈
+        {% elif forloop.counter == 3 %}
+        {% else %}#{{ forloop.counter }}{% endif %}
+      </div>
+      <div class="rank-name">{{ entry.promoter__name }}</div>
+     <div class="rank-bar">
+    <div class="rank-bar-fill" style="width: 75%;"></div>
+</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🏆</div>
+      <p>No sales recorded in this period yet.</p>
+    </div>
+  {% endif %}
+</div>
+</body>
+</html>
