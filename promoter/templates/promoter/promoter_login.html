@@ -81,7 +81,7 @@ h1 {
 <div class="card">
   <div class="logo">👤</div>
   <h1>Promoter Login</h1>
-  <p class="subtitle">Enter your registered phone number to access your stock and leaderboard.</p>
+  <p class="subtitle">Enter your phone number and PIN to access your stock and leaderboard.</p>
   
   {% if messages %}
     {% for msg in messages %}
@@ -94,6 +94,10 @@ h1 {
     <div class="form-group">
       <label>Phone Number</label>
       <input type="tel" name="phone_number" placeholder="e.g. 0248123456" required autofocus>
+    </div>
+    <div class="form-group">
+      <label>4-Digit PIN</label>
+      <input type="password" name="pin" placeholder="Enter your PIN" maxlength="4" pattern="[0-9]{4}" required>
     </div>
     <button type="submit" class="btn">Login →</button>
   </form>

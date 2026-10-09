@@ -1,11 +1,13 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.auth.models import User
 
-# --- NEW: THE SHOP MODEL ---
 class Shop(models.Model):
     name = models.CharField(max_length=200, default="My Shop")
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True) # <-- ADD THIS
     created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
         return self.name
 
@@ -24,15 +26,21 @@ class Product(models.Model):
         from django.db.models import Sum
         from django.db.models.functions import Coalesce
         agg = self.dailydeployment_set.aggregate(
-            taken_c=Coalesce(Sum("cartons_taken"), 0), taken_p=Coalesce(Sum("pieces_taken"), 0),
-            ret_c=Coalesce(Sum("cartons_returned"), 0), ret_p=Coalesce(Sum("pieces_returned"), 0),
+            taken_c=Coalesce(Sum("cartons_taken"), 0),
+            taken_p=Coalesce(Sum("pieces_taken"), 0),
+            ret_c=Coalesce(Sum("cartons_returned"), 0),
+            ret_p=Coalesce(Sum("pieces_returned"), 0),
         )
-        taken_c, taken_p = int(agg["taken_c"] or 0), int(agg["taken_p"] or 0)
-        ret_c, ret_p = int(agg["ret_c"] or 0), int(agg["ret_p"] or 0)
-        items_per, initial = int(self.items_per_carton or 1), int(self.initial_stock or 0)
+        taken_c = int(agg["taken_c"] or 0)
+        taken_p = int(agg["taken_p"] or 0)
+        ret_c = int(agg["ret_c"] or 0)
+        ret_p = int(agg["ret_p"] or 0)
+        items_per = int(self.items_per_carton or 1)
+        initial = int(self.initial_stock or 0)
         taken = (taken_c * items_per) + taken_p
         returned = (ret_c * items_per) + ret_p
-        current = max(0, initial - (taken - returned))
+        current = initial - (taken - returned)
+        if current < 0: current = 0
         self.total_pieces_in_stock = current
         self.cartons_in_stock = current // items_per
         self.pieces_in_stock = current % items_per
@@ -50,6 +58,8 @@ class Promoter(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, blank=True)
+    pin = models.CharField(max_length=4, default="0000")  # <-- THIS IS THE PIN FIELD
+
     def __str__(self):
         return self.name
 
@@ -72,7 +82,8 @@ class DailyDeployment(models.Model):
             raise ValidationError(f"Returns ({new_returned} pcs) cannot exceed dispatches ({new_taken} pcs)!")
         units_sold = new_taken - new_returned
         if units_sold > 0:
-            cartons_sold, pieces_sold = units_sold // items_per, units_sold % items_per
+            cartons_sold = units_sold // items_per
+            pieces_sold = units_sold % items_per
             self.cash_owed = (cartons_sold * self.product.price_per_carton) + (pieces_sold * self.product.price_per_piece)
         else:
             self.cash_owed = 0.00
@@ -94,8 +105,10 @@ class ActivityLog(models.Model):
     CORRECTION = "correction"
     DELETE = "delete"
     EVENT_CHOICES = [
-        (DISPATCH, "Dispatched Out"), (RETURN, "Returned — Not Sold"),
-        (CORRECTION, "Correction"), (DELETE, "Deleted Mistake"),
+        (DISPATCH, "Dispatched Out"),
+        (RETURN, "Returned — Not Sold"),
+        (CORRECTION, "Correction"),
+        (DELETE, "Deleted Mistake"),
     ]
     created_at = models.DateTimeField(auto_now_add=True)
     business_date = models.DateField(db_index=True)
@@ -116,7 +129,13 @@ class ActivityLog(models.Model):
     @classmethod
     def record(cls, event_type, promoter_name, product_name, cartons=0, pieces=0, cash_amount=0, label="", business_date=None, shop=None):
         return cls.objects.create(
-            shop=shop, business_date=business_date or timezone.localdate(), event_type=event_type,
-            promoter_name=promoter_name, product_name=product_name, cartons=int(cartons or 0),
-            pieces=int(pieces or 0), cash_amount=cash_amount or 0, label=label or "",
+            shop=shop,
+            business_date=business_date or timezone.localdate(),
+            event_type=event_type,
+            promoter_name=promoter_name,
+            product_name=product_name,
+            cartons=int(cartons or 0),
+            pieces=int(pieces or 0),
+            cash_amount=cash_amount or 0,
+            label=label or "",
         )

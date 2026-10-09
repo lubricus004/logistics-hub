@@ -1,13 +1,15 @@
 from django.contrib import admin
 from django.urls import path, include
-from main.views import dashboard, statements, setup_shop, logout_shop, leaderboard_page
+from main.views import dashboard, statements, shop_login, shop_register, shop_logout, leaderboard_page, profile
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('login/', shop_login, name='shop_login'),
+    path('register/', shop_register, name='shop_register'),
+    path('logout/', shop_logout, name='shop_logout'),
     path('', dashboard, name='dashboard'),
-    path('setup/', setup_shop, name='setup_shop'),
-    path('logout/', logout_shop, name='logout_shop'),
     path('leaderboard/', leaderboard_page, name='leaderboard'),
     path('statements/', statements, name='statements'),
-    path('promoter/', include('promoter.urls')),  # <-- THIS LINE FIXES THE 404
+    path('promoter/', include('promoter.urls')),
+    path('profile/', profile, name='profile'),
 ]
