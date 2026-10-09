@@ -2,105 +2,175 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Promoter Login — Logistics Hub</title>
 <style>
-:root {
-  --g-50:#f0fdf4; --g-100:#dcfce7; --g-200:#bbf7d0;
-  --g-500:#22c55e; --g-600:#16a34a; --g-700:#15803d; --g-800:#166534;
-  --white:#ffffff; --gray-200:#e5e7eb; --gray-400:#9ca3af; --gray-500:#6b7280;
-}
-* { box-sizing:border-box; margin:0; padding:0; }
-body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  background: linear-gradient(135deg, var(--g-50) 0%, var(--white) 100%);
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-}
-.card {
-  background: var(--white);
-  border: 1px solid var(--g-200);
-  border-radius: 20px;
-  padding: 40px 32px;
-  width: 100%; max-width: 420px;
-  box-shadow: 0 20px 50px rgba(20,83,45,0.12);
-}
-.logo {
-  width: 64px; height: 64px;
-  background: linear-gradient(135deg, var(--g-600), var(--g-500));
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; margin-bottom: 20px;
-  box-shadow: 0 8px 20px rgba(22,163,74,0.3);
-}
-h1 {
-  font-size: 1.5rem; font-weight: 700; color: var(--g-800);
-  margin-bottom: 6px; letter-spacing: -0.02em;
-}
-.subtitle {
-  color: var(--gray-500); font-size: 0.9rem; line-height: 1.5;
-  margin-bottom: 28px;
-}
-.form-group { margin-bottom: 18px; }
-.form-group label {
-  display: block; font-size: 0.8rem; font-weight: 600;
-  color: var(--gray-500); margin-bottom: 6px;
-  text-transform: uppercase; letter-spacing: 0.04em;
-}
-.form-group input {
-  width: 100%; padding: 14px 16px;
-  border: 1.5px solid var(--gray-200); border-radius: 12px;
-  background: var(--g-50); color: var(--gray-900);
-  font-size: 1rem; font-family: inherit; outline: none;
-  transition: all 0.15s;
-}
-.form-group input:focus {
-  border-color: var(--g-500);
-  background: var(--white);
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
-}
-.form-group input::placeholder { color: var(--gray-400); }
-.btn {
-  width: 100%; padding: 14px; border: none; border-radius: 12px;
-  background: linear-gradient(135deg, var(--g-600), var(--g-500));
-  color: white; font-size: 1rem; font-weight: 700;
-  cursor: pointer; transition: all 0.15s; font-family: inherit;
-  margin-top: 8px;
-}
-.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(22,163,74,0.3); }
-.btn:active { transform: scale(0.98); }
-.toast {
-  background: #ef4444; color: white;
-  padding: 12px 18px; border-radius: 10px;
-  font-size: 0.875rem; font-weight: 600; margin-bottom: 16px;
-}
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: rgba(0,0,0,0.08);
+    --radius: 18px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 40px 28px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #34c759, #30d158);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 28px;
+    box-shadow: 0 8px 20px rgba(52, 199, 89, 0.25);
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    margin-bottom: 32px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 16px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: #fafafa;
+    font-size: 1.05rem;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .form-group input:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+  }
+
+  .form-group input::placeholder {
+    color: #aeaeb2;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+  }
+
+  .btn:hover {
+    background: var(--accent-hover);
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  .toast {
+    background: #ff3b30;
+    color: white;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  @media (min-width: 600px) {
+    .card {
+      padding: 48px 40px;
+    }
+  }
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="logo">👤</div>
-  <h1>Promoter Login</h1>
-  <p class="subtitle">Enter your phone number and PIN to access your stock and leaderboard.</p>
-  
-  {% if messages %}
-    {% for msg in messages %}
-      <div class="toast">{{ msg }}</div>
-    {% endfor %}
-  {% endif %}
-  
-  <form method="POST">
-    {% csrf_token %}
-    <div class="form-group">
-      <label>Phone Number</label>
-      <input type="tel" name="phone_number" placeholder="e.g. 0248123456" required autofocus>
-    </div>
-    <div class="form-group">
-      <label>4-Digit PIN</label>
-      <input type="password" name="pin" placeholder="Enter your PIN" maxlength="4" pattern="[0-9]{4}" required>
-    </div>
-    <button type="submit" class="btn">Login →</button>
-  </form>
-</div>
+  <div class="card">
+    <div class="logo">👤</div>
+    <h1>Promoter Login</h1>
+    <p class="subtitle">Enter your phone number and PIN to see your stock and leaderboard.</p>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="toast">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" name="phone_number" placeholder="e.g. 0248123456" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>4-Digit PIN</label>
+        <input type="password" name="pin" placeholder="••••" maxlength="4" pattern="[0-9]{4}" required>
+      </div>
+      <button type="submit" class="btn">Continue</button>
+    </form>
+  </div>
 </body>
 </html>

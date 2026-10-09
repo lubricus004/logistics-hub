@@ -2,224 +2,304 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>My Stock — {{ promoter.name }}</title>
 <style>
-:root {
-  --g-50:#f0fdf4; --g-100:#dcfce7; --g-200:#bbf7d0;
-  --g-500:#22c55e; --g-600:#16a34a; --g-700:#15803d; --g-800:#166534;
-  --white:#ffffff; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
-  --gray-400:#9ca3af; --gray-500:#6b7280; --gray-700:#374151;
-  --red:#ef4444; --amber:#f59e0b; --blue:#3b82f6;
-  --radius:14px; --shadow:0 1px 3px rgba(20,83,45,0.06), 0 8px 24px rgba(20,83,45,0.08);
-}
-* { box-sizing:border-box; margin:0; padding:0; }
-body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  background: var(--g-50);
-  color: var(--gray-700);
-  min-height: 100vh;
-  padding: 20px;
-}
-.container { max-width: 720px; margin: 0 auto; }
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 24px; padding-bottom: 16px;
-  border-bottom: 1px solid var(--g-200);
-}
-.header-info h1 {
-  font-size: 1.3rem; font-weight: 700; color: var(--g-800);
-  letter-spacing: -0.02em;
-}
-.header-info .shop {
-  font-size: 0.85rem; color: var(--gray-500); margin-top: 2px;
-}
-.btn-logout {
-  background: var(--white); color: var(--red);
-  border: 1.5px solid var(--gray-200);
-  padding: 8px 16px; border-radius: 10px;
-  font-size: 0.85rem; font-weight: 600;
-  text-decoration: none; transition: all 0.15s;
-}
-.btn-logout:hover { background: #fef2f2; border-color: var(--red); }
-.stat-card {
-  background: linear-gradient(135deg, var(--g-600), var(--g-500));
-  color: white;
-  border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 24px rgba(22,163,74,0.25);
-}
-.stat-label {
-  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.05em; opacity: 0.9; margin-bottom: 8px;
-}
-.stat-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
-.section {
-  background: var(--white); border: 1px solid var(--g-200);
-  border-radius: var(--radius); padding: 24px;
-  margin-bottom: 20px; box-shadow: var(--shadow);
-}
-.section-title {
-  font-size: 1rem; font-weight: 700; color: var(--g-800);
-  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
-  letter-spacing: -0.01em;
-}
-.dep-card {
-  background: var(--g-50); border: 1px solid var(--g-200);
-  border-radius: 12px; padding: 16px; margin-bottom: 10px;
-}
-.dep-product { font-weight: 700; font-size: 0.95rem; color: var(--g-800); margin-bottom: 10px; }
-.dep-row {
-  display: flex; justify-content: space-between;
-  font-size: 0.85rem; margin-bottom: 6px;
-}
-.dep-row .label { color: var(--gray-500); }
-.dep-row .value { font-weight: 600; color: var(--gray-700); }
-.dep-row .value.cash { color: var(--red); }
-.window-toggles {
-  display: flex; gap: 6px; margin-bottom: 16px;
-  background: var(--gray-100); padding: 4px; border-radius: 10px;
-}
-.window-toggles a {
-  flex: 1; padding: 8px 12px; border-radius: 8px;
-  font-size: 0.8rem; font-weight: 600; text-decoration: none;
-  color: var(--gray-500); text-align: center; transition: all 0.15s;
-}
-.window-toggles a.active {
-  background: var(--white); color: var(--g-700);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.rank-banner {
-  background: linear-gradient(135deg, var(--g-600), var(--g-500));
-  color: white; border-radius: 12px; padding: 16px;
-  text-align: center; margin-bottom: 16px;
-  font-weight: 700; font-size: 1rem;
-  box-shadow: 0 4px 12px rgba(22,163,74,0.25);
-}
-.lb-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-.lb-table th {
-  text-align: left; padding: 10px 12px;
-  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.05em; color: var(--gray-500);
-  background: var(--g-50); border-bottom: 1px solid var(--g-200);
-}
-.lb-table td {
-  padding: 12px; border-bottom: 1px solid var(--gray-100);
-}
-.lb-table tr:last-child td { border-bottom: none; }
-.lb-table tr.is-you { background: var(--g-50); }
-.lb-table tr.is-you td { font-weight: 700; color: var(--g-800); }
-.lb-rank { font-weight: 700; width: 60px; }
-.empty {
-  text-align: center; padding: 30px 20px;
-  color: var(--gray-500); font-size: 0.9rem;
-}
-.empty-icon {
-  width: 56px; height: 56px; margin: 0 auto 14px;
-  background: var(--g-100); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem;
-}
-@media (max-width: 600px) {
-  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .stat-value { font-size: 1.6rem; }
-}
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --accent: #0071e3;
+    --green: #34c759;
+    --border: rgba(0,0,0,0.06);
+    --radius: 16px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .topbar {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .topbar h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .topbar .shop {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .btn-logout {
+    background: #f5f5f7;
+    color: #ff3b30;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #0071e3, #00c7be);
+    color: white;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  .window-toggles {
+    display: flex;
+    background: #f5f5f7;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 18px;
+  }
+
+  .window-toggles a {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .window-toggles a.active {
+    background: white;
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .rank-banner {
+    background: linear-gradient(135deg, #34c759, #30d158);
+    color: white;
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+  }
+
+  .lb-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lb-item:last-child { border-bottom: none; }
+
+  .lb-item.is-you {
+    background: #f0f9ff;
+    margin: 0 -20px;
+    padding: 14px 20px;
+    border-radius: 12px;
+  }
+
+  .lb-rank {
+    width: 42px;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .lb-name {
+    flex: 1;
+    font-weight: 600;
+  }
+
+  .dep-card {
+    background: #fafafa;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .dep-product {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .dep-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+
+  .dep-row .label { color: var(--text-secondary); }
+  .dep-row .value { font-weight: 600; }
+  .dep-row .value.cash { color: #ff3b30; }
+
+  .empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+
+  @media (min-width: 600px) {
+    .container { padding: 28px 24px; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div class="header-info">
-      <h1>👤 {{ promoter.name }}</h1>
+  <div class="topbar">
+    <div>
+      <h1>{{ promoter.name }}</h1>
       <div class="shop">{{ shop.name }}</div>
     </div>
     <a href="{% url 'promoter_logout' %}" class="btn-logout">Logout</a>
   </div>
 
-  <!-- Total Cash Owed -->
-  <div class="stat-card">
-    <div class="stat-label">Total Cash Owed</div>
-    <div class="stat-value">₵{{ total_cash_owed }}</div>
-  </div>
-
-  <!-- Leaderboard (MOVED TO TOP) -->
-  <div class="section">
-    <div class="section-title">🏆 Leaderboard</div>
-    
-    <div class="window-toggles">
-      <a href="?window=1" class="{% if active_window == '1' %}active{% endif %}">Today</a>
-      <a href="?window=3" class="{% if active_window == '3' %}active{% endif %}">Last 3 Days</a>
-      <a href="?window=7" class="{% if active_window == '7' %}active{% endif %}">Last 7 Days</a>
+  <div class="container">
+    <!-- Cash Owed -->
+    <div class="stat-card">
+      <div class="stat-label">Total Cash Owed</div>
+      <div class="stat-value">₵{{ total_cash_owed }}</div>
     </div>
 
-    {% if my_rank %}
-    <div class="rank-banner">🎯 You are ranked #{{ my_rank }} this period</div>
-    {% endif %}
+    <!-- Leaderboard -->
+    <div class="section">
+      <div class="section-title">🏆 Leaderboard</div>
 
-    {% if leaderboard %}
-    <table class="lb-table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Promoter</th>
-        </tr>
-      </thead>
-      <tbody>
+      <div class="window-toggles">
+        <a href="?window=1" class="{% if active_window == '1' %}active{% endif %}">Today</a>
+        <a href="?window=3" class="{% if active_window == '3' %}active{% endif %}">3 Days</a>
+        <a href="?window=7" class="{% if active_window == '7' %}active{% endif %}">7 Days</a>
+      </div>
+
+      {% if my_rank %}
+        <div class="rank-banner">You are ranked #{{ my_rank }}</div>
+      {% endif %}
+
+      {% if leaderboard %}
         {% for entry in leaderboard %}
-        <tr class="{% if entry.promoter__id == promoter.id %}is-you{% endif %}">
-          <td class="lb-rank">
-            {% if forloop.counter == 1 %}🥇
-            {% elif forloop.counter == 2 %}🥈
-            {% elif forloop.counter == 3 %}🥉
-            {% else %}#{{ forloop.counter }}{% endif %}
-            {% if entry.promoter__id == promoter.id %} (You){% endif %}
-          </td>
-          <td>{{ entry.promoter__name }}</td>
-        </tr>
+          <div class="lb-item {% if entry.promoter__id == promoter.id %}is-you{% endif %}">
+            <div class="lb-rank">
+              {% if forloop.counter == 1 %}🥇
+              {% elif forloop.counter == 2 %}🥈
+              {% elif forloop.counter == 3 %}🥉
+              {% else %}#{{ forloop.counter }}{% endif %}
+            </div>
+            <div class="lb-name">
+              {{ entry.promoter__name }}
+              {% if entry.promoter__id == promoter.id %} <span style="color:var(--accent);font-size:0.85rem">(You)</span>{% endif %}
+            </div>
+          </div>
         {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="empty">
-      <div class="empty-icon">🏆</div>
-      <p>No sales recorded in this period yet.</p>
+      {% else %}
+        <div class="empty">
+          <div class="empty-icon">🏆</div>
+          <p>No sales recorded in this period yet.</p>
+        </div>
+      {% endif %}
     </div>
-    {% endif %}
-  </div>
 
-  <!-- My Stock (MOVED BELOW LEADERBOARD) -->
-  <div class="section">
-    <div class="section-title">📦 My Stock</div>
-    {% if deployments %}
-      {% for dep in deployments %}
-      <div class="dep-card">
-        <div class="dep-product">{{ dep.product.name }}</div>
-        <div class="dep-row">
-          <span class="label">Issued</span>
-          <span class="value">{{ dep.cartons_taken }} crt / {{ dep.pieces_taken }} pcs</span>
+    <!-- My Stock -->
+    <div class="section">
+      <div class="section-title">📦 My Stock</div>
+
+      {% if deployments %}
+        {% for dep in deployments %}
+          <div class="dep-card">
+            <div class="dep-product">{{ dep.product.name }}</div>
+            <div class="dep-row">
+              <span class="label">Issued</span>
+              <span class="value">{{ dep.cartons_taken }} crt / {{ dep.pieces_taken }} pcs</span>
+            </div>
+            <div class="dep-row">
+              <span class="label">Returned</span>
+              <span class="value">{{ dep.cartons_returned }} crt / {{ dep.pieces_returned }} pcs</span>
+            </div>
+            <div class="dep-row">
+              <span class="label">Cash Owed</span>
+              <span class="value cash">₵{{ dep.cash_owed }}</span>
+            </div>
+            <div class="dep-row">
+              <span class="label">Date</span>
+              <span class="value">{{ dep.date }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">
+          <div class="empty-icon">📦</div>
+          <p>No stock issued to you yet.</p>
         </div>
-        <div class="dep-row">
-          <span class="label">Returned</span>
-          <span class="value">{{ dep.cartons_returned }} crt / {{ dep.pieces_returned }} pcs</span>
-        </div>
-        <div class="dep-row">
-          <span class="label">Cash Owed</span>
-          <span class="value cash">₵{{ dep.cash_owed }}</span>
-        </div>
-        <div class="dep-row">
-          <span class="label">Date</span>
-          <span class="value">{{ dep.date }}</span>
-        </div>
-      </div>
-      {% endfor %}
-    {% else %}
-      <div class="empty">
-        <div class="empty-icon">📦</div>
-        <p>No stock issued to you yet.</p>
-      </div>
-    {% endif %}
+      {% endif %}
+    </div>
   </div>
-</div>
 </body>
 </html>
