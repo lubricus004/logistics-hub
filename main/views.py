@@ -116,7 +116,7 @@ def leaderboard_page(request):
 def leaderboard_page(request):
     shop = get_active_shop(request)
     if not shop:
-        return redirect("setup_shop")
+        return redirect("shop_login")
     window = request.GET.get("window", "1")
     today = date.today()
     if window == "3":
