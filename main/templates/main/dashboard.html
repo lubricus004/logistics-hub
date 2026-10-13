@@ -657,17 +657,18 @@
         </thead>
         <tbody>
           {% for d in container.items %}
-          <tr>
-            <td><strong>{{ d.product.name }}</strong></td>
-            <td style="text-align:center; color: var(--amber);">{{ d.cartons_taken }}c / {{ d.pieces_taken }}p</td>
-            <td style="text-align:center; color: var(--green);">{{ d.cartons_returned }}c / {{ d.pieces_returned }}p</td>
-            <td style="text-align:right; font-weight: 600;">₵{{ d.cash_owed }}</td>
-            <td style="text-align:center">
-              <button class="action-btn undo" onclick="openUndo('{{ d.id }}')" title="Undo">↩️</button>
-              <button class="action-btn nuke" onclick="openNuke('{{ d.id }}', '{{ d.cash_owed }}')" title="Nuke">🗑️</button>
-            </td>
-          </tr>
-          {% endfor %}
+<tr>
+  <td>{{ d.product.name }}</td>
+  <td>{{ d.cartons_taken }}c / {{ d.pieces_taken }}p</td>
+  <td>{{ d.cartons_returned }}c / {{ d.pieces_returned }}p</td>
+  <td>₵{{ d.cash_owed }}</td>
+  <td style="text-align: center; white-space: nowrap;">
+    <!-- UNDO BUTTON -->
+    | <button type="button" onclick="openUndoModal('{{ d.id }}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">↩️</button>
+    <!-- NUKE BUTTON -->
+   <button type="button" onclick="openNukeModal('{{ d.id }}', '{{ d.promoter.name }}', '{{ d.cash_owed }}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🗑️</button>
+</tr>
+{% endfor %}
         </tbody>
       </table>
       <div class="ledger-total">
@@ -755,17 +756,20 @@
 </div>
 
 <!-- Nuke Modal -->
-<div id="nukeModal" class="modal">
+<div id="nukemodal" class="modal">
   <div class="modal-content">
-    <button class="modal-close" onclick="closeModal('nukeModal')">&times;</button>
+    <button class="modal-close" onclick="closeModal('nukemodal')">&times;</button>
     <h3 style="margin-bottom: 16px; font-weight: 700; color: var(--red);">Clear Entry</h3>
-    <p id="nukeMsg" style="margin-bottom: 24px; color: var(--text-secondary);"></p>
+    
+    <!-- THIS IS THE TEXT THAT WILL CHANGE DYNAMICALLY -->
+    <p id="nukeMsg" style="margin-bottom: 24px; color: var(--text-secondary);">Are you sure you want to clear this entry?</p>
+    
     <form method="POST">
       {% csrf_token %}
       <input type="hidden" name="action" value="nuke_entry">
       <input type="hidden" id="nuke_id" name="deployment_id">
       <button type="submit" class="btn" style="background: var(--red); color: white; width: 100%; margin-bottom: 10px;">Yes, Clear This Entry</button>
-      <button type="button" class="btn" style="background: #f5f5f7; width: 100%;" onclick="closeModal('nukeModal')">Cancel</button>
+      <button type="button" class="btn" style="background: #f5f5f7; width: 100%;" onclick="closeModal('nukemodal')">Cancel</button>
     </form>
   </div>
 </div>
@@ -792,23 +796,29 @@ function openDelete(id, name) {
   document.getElementById('deleteModal').style.display = 'flex';
 }
 
-function openUndo(id) {
-  document.getElementById('undo_id').value = id;
-  document.getElementById('undoModal').style.display = 'flex';
-}
+function openUndoModal(id) {
+    document.getElementById('undo_id').value = id;
+    document.getElementById('undoModal').style.display = 'flex';
+  }
 
-function openNuke(id, cash) {
-  document.getElementById('nuke_id').value = id;
-  const msg = cash > 0
-    ? `Cash still owed: ₵${cash}. Only clear if the promoter has already paid.`
-    : `No cash owed. This is bookkeeping only.`;
-  document.getElementById('nukeMsg').textContent = msg;
-  document.getElementById('nukeModal').style.display = 'flex';
-}
+  function openNukeModal(id, promoterName, cashOwed) {
+    document.getElementById('nuke_id').value = id;
+    
+    // Check if cash is owed and update the warning message
+    let cash = parseFloat(cashOwed);
+    let msg = "Are you sure you want to clear this entry?";
+    
+    if (cash > 0) {
+      msg = `Promoter ${promoterName} still has ₵${cashOwed} outstanding amount of cash.`;
+    }
+    
+    document.getElementById('nukeMsg').innerText = msg;
+    document.getElementById('nukemodal').style.display = 'flex';
+  }
 
-function closeModal(id) {
-  document.getElementById(id).style.display = 'none';
-}
+  function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+  }
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
