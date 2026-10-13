@@ -34,6 +34,9 @@ def shop_login(request):
                 messages.error(request, "Invalid email or password.")
         except User.DoesNotExist:
             messages.error(request, "Invalid email or password.")
+        except Shop.DoesNotExist:
+            # Just in case the user exists but has no shop linked
+            messages.error(request, "Account found, but no shop linked. Please contact admin.")
     return render(request, "main/login.html")
 
 def shop_register(request):
@@ -131,7 +134,7 @@ def leaderboard_page(request):
 def dashboard(request):
     shop = get_active_shop(request)
     if not shop:
-        return redirect("setup_shop")
+        return redirect("shop_login")
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -149,7 +152,15 @@ def dashboard(request):
                 existing.recalculate()
                 messages.success(request, f"Added stock to '{existing.name}'!")
             else:
-                prod = Product(shop=shop, name=name, items_per_carton=items_per_crt, price_per_carton=Decimal(request.POST.get("price_per_carton", "0.00")), price_per_piece=Decimal(request.POST.get("price_per_piece", "0.00")), cartons_in_stock=cartons, pieces_in_stock=pieces)
+                prod = Product(
+                    shop=shop, 
+                    name=name, 
+                    items_per_carton=items_per_crt, 
+                    price_per_carton=Decimal(request.POST.get("price_per_carton", "0.00")), 
+                    price_per_piece=Decimal(request.POST.get("price_per_piece", "0.00")), 
+                    cartons_in_stock=cartons, 
+                    pieces_in_stock=pieces
+                )
                 prod.save()
                 prod.recalculate()
                 messages.success(request, f"New product '{name}' registered!")
@@ -237,26 +248,193 @@ def dashboard(request):
                             messages.error(request, f"Error: {e}")
 
         elif action == "reconcile_return":
+            print("🚨 1. RETURN ACTION TRIGGERED!") # ADD THIS
             c_ret = int(request.POST.get("cartons_returned", "0") or 0)
             p_ret = int(request.POST.get("pieces_returned", "0") or 0)
+            
             if c_ret == 0 and p_ret == 0:
                 messages.error(request, "Enter at least 1 carton or piece to return.")
+                print("❌ FAILED: Quantity was 0") # ADD THIS
             else:
-                dep = DailyDeployment.objects.filter(shop=shop, promoter_id=request.POST.get("promoter"), product_id=request.POST.get("product"), date=date.today()).first()
+                dep = DailyDeployment.objects.filter(
+                    shop=shop, 
+                    promoter_id=request.POST.get("promoter"), 
+                    product_id=request.POST.get("product"), 
+                    date=date.today()
+                ).first()
+                
                 if not dep:
                     messages.error(request, "No matching dispatch found today.")
+                    print("❌ FAILED: No matching dispatch found") # ADD THIS
                 else:
                     items_per = dep.product.items_per_carton
                     remaining = ((dep.cartons_taken * items_per) + dep.pieces_taken) - ((dep.cartons_returned * items_per) + dep.pieces_returned)
                     attempting = (c_ret * items_per) + p_ret
+                    
                     if attempting > remaining:
                         messages.error(request, f"Cannot return more than outstanding ({remaining // items_per} crt / {remaining % items_per} pcs).")
+                        print(f"❌ FAILED: Attempting {attempting} > Remaining {remaining}") # ADD THIS
                     else:
+                        print("✅ SUCCESS: Processing return and creating log...") # ADD THIS
                         dep.cartons_returned += c_ret
                         dep.pieces_returned += p_ret
                         dep.save()
                         messages.success(request, f"Returned {c_ret} crt / {p_ret} pcs. Stock restored.")
-                        ActivityLog.record(event_type=ActivityLog.RETURN, promoter_name=dep.promoter.name, product_name=dep.product.name, cartons=c_ret, pieces=p_ret, label="Returned", shop=shop)
+                        
+                        ActivityLog.record(
+                            event_type=ActivityLog.RETURN, 
+                            promoter_name=dep.promoter.name, 
+                            product_name=dep.product.name, 
+                            cartons=c_ret, 
+                            pieces=p_ret, 
+                            label=f"Restored {c_ret}c / {p_ret}p to stock", 
+                            shop=shop
+                        )
+                        print("✅ LOG CREATED IN DATABASE!") # ADD THIS
+        # --- NEW ADJUST_ENTRY LOGIC ADDED HERE ---
+        elif action == "adjust_entry":
+            print("🚨 1. UNDO/CORRECTION ACTION TRIGGERED!")
+            deployment_id = request.POST.get("deployment_id")
+            target = request.POST.get("target") # "dispatched" or "returned"
+            unit_type = request.POST.get("unit_type") # "cartons" or "pieces"
+            quantity = int(request.POST.get("quantity", "0") or 0)
+            print(f"   ID: {deployment_id}, Target: {target}, Qty: {quantity}")
+
+            if not deployment_id or quantity <= 0:
+                messages.error(request, "Invalid correction data.")
+                return redirect("dashboard")
+
+            dep = DailyDeployment.objects.filter(shop=shop, pk=deployment_id).first()
+            if not dep:
+                messages.error(request, "Deployment record not found.")
+                return redirect("dashboard")
+
+            product = dep.product
+            items_per_carton = product.items_per_carton or 1
+            
+            # Convert the adjustment to pieces for easier math
+            adjust_pieces = (quantity * items_per_carton) if unit_type == "cartons" else quantity
+
+            if target == "dispatched":
+                # UNDOING A DISPATCH: Add stock back to product, reduce 'taken' in deployment
+                current_taken_pieces = (dep.cartons_taken * items_per_carton) + dep.pieces_taken
+                
+                if adjust_pieces > current_taken_pieces:
+                    messages.error(request, "Cannot undo more than was dispatched!")
+                    return redirect("dashboard")
+
+                # 1. Add stock back to the product
+                if unit_type == "cartons":
+                    product.cartons_in_stock += quantity
+                else:
+                    product.pieces_in_stock += quantity
+                product.save()
+                product.recalculate()
+
+                # 2. Reduce the 'taken' amount in the deployment record
+                new_taken_pieces = current_taken_pieces - adjust_pieces
+                dep.cartons_taken = new_taken_pieces // items_per_carton
+                dep.pieces_taken = new_taken_pieces % items_per_carton
+                
+                # 3. Clean up: if nothing is taken or returned anymore, delete the empty record
+                if dep.cartons_taken == 0 and dep.pieces_taken == 0 and dep.cartons_returned == 0 and dep.pieces_returned == 0:
+                    dep.delete()
+                    messages.success(request, "Dispatch undone and record cleared.")
+                else:
+                    dep.save()
+                    messages.success(request, "Dispatch undone! Stock restored.")
+
+                # 4. CREATE THE STATEMENT LOG (This was missing!)
+                ActivityLog.record(
+                    event_type=ActivityLog.CORRECTION,
+                    promoter_name=dep.promoter.name,
+                    product_name=product.name,
+                    cartons=quantity if unit_type == "cartons" else 0,
+                    pieces=quantity if unit_type == "pieces" else 0,
+                    label=f"UNDID Dispatch: {quantity} {unit_type}",
+                    shop=shop
+                )
+                print("✅ CORRECTION LOG CREATED FOR DISPATCH!")
+
+            elif target == "returned":
+                # UNDOING A RETURN: Remove stock from product, reduce 'returned' in deployment
+                current_returned_pieces = (dep.cartons_returned * items_per_carton) + dep.pieces_returned
+                
+                if adjust_pieces > current_returned_pieces:
+                    messages.error(request, "Cannot undo more than was returned!")
+                    return redirect("dashboard")
+
+                # 1. Remove stock from the product
+                if unit_type == "cartons":
+                    product.cartons_in_stock -= quantity
+                else:
+                    product.pieces_in_stock -= quantity
+                product.save()
+                product.recalculate()
+
+                # 2. Reduce the 'returned' amount in the deployment record
+                new_returned_pieces = current_returned_pieces - adjust_pieces
+                dep.cartons_returned = new_returned_pieces // items_per_carton
+                dep.pieces_returned = new_returned_pieces % items_per_carton
+                dep.save()
+                messages.success(request, "Return undone! Stock adjusted.")
+
+                # 3. CREATE THE STATEMENT LOG (This was missing!)
+                ActivityLog.record(
+                    event_type=ActivityLog.CORRECTION,
+                    promoter_name=dep.promoter.name,
+                    product_name=product.name,
+                    cartons=quantity if unit_type == "cartons" else 0,
+                    pieces=quantity if unit_type == "pieces" else 0,
+                    label=f"UNDID Return: {quantity} {unit_type}",
+                    shop=shop
+                )
+                print("✅ CORRECTION LOG CREATED FOR RETURN!")
+            elif target == "returned":
+                # UNDOING A RETURN: Remove stock from product, reduce 'returned' in deployment
+                current_returned_pieces = (dep.cartons_returned * items_per_carton) + dep.pieces_returned
+                
+                if adjust_pieces > current_returned_pieces:
+                    messages.error(request, "Cannot undo more than was returned!")
+                    return redirect("dashboard")
+
+                # 1. Remove stock from the product
+                if unit_type == "cartons":
+                    product.cartons_in_stock -= quantity
+                else:
+                    product.pieces_in_stock -= quantity
+                product.save()
+                product.recalculate()
+
+                # 2. Reduce the 'returned' amount in the deployment record
+                new_returned_pieces = current_returned_pieces - adjust_pieces
+                dep.cartons_returned = new_returned_pieces // items_per_carton
+                dep.pieces_returned = new_returned_pieces % items_per_carton
+                dep.save()
+                messages.success(request, "Return undone! Stock adjusted.")
+            else:
+                messages.error(request, "Invalid target for correction.")
+        # -----------------------------------------
+
+        elif action == "nuke_entry":
+            deployment_id = request.POST.get("deployment_id")
+            dep = DailyDeployment.objects.filter(shop=shop, pk=deployment_id).first()
+            
+            if not dep:
+                messages.error(request, "Record not found.")
+            else:   
+                ActivityLog.record(
+                    event_type=ActivityLog.CLEAR, # (Or use ActivityLog.CLEAR if you added that to your models)
+                    promoter_name=dep.promoter.name,
+                    product_name=dep.product.name,
+                    cartons=dep.cartons_taken,
+                    pieces=dep.pieces_taken,
+                    label=f"VOIDED/CLEARED: {dep.promoter.name} - {dep.product.name}",
+                    shop=shop
+                ) 
+                dep.delete()
+                messages.success(request, "Entry cleared from ledger.")
+
         return redirect("dashboard")
 
     for p in Product.objects.filter(shop=shop):
@@ -281,7 +459,7 @@ def dashboard(request):
 def statements(request):
     shop = get_active_shop(request)
     if not shop:
-        return redirect("setup_shop")
+       return redirect("shop_login")
     date_str = request.GET.get("date", "").strip()
     selected = date.today()
     if date_str:

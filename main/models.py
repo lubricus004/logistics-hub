@@ -101,6 +101,7 @@ class DailyDeployment(models.Model):
 class ActivityLog(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, null=True, blank=True)
     DISPATCH = "dispatch"
+    CLEAR = 'clear'
     RETURN = "return"
     CORRECTION = "correction"
     DELETE = "delete"
