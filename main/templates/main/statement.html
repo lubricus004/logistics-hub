@@ -115,6 +115,7 @@
   .btn-chip.active-purple { background: var(--purple); color: white; }
   .btn-chip.active-red { background: var(--red); color: white; }
   .btn-chip.active-blue { background: var(--accent); color: white; }
+  .btn-chip.active-brown { background: #795548; color: white; }
 
   .meta-row {
     display: flex;
@@ -162,6 +163,7 @@
   .log-card.is-delete { border-color: #fecaca; background: #fff5f5; }
   .log-card.is-return { border-color: #fde68a; background: #fffbeb; }
   .log-card.is-correction { border-color: #e9d5ff; background: #faf5ff; }
+  .log-card.is-warehouse { border-color: #d7ccc8; background: #efebe9; }
 
   .icon-bubble {
     width: 42px;
@@ -178,6 +180,7 @@
   .icon-correction { background: #f3e8ff; }
   .icon-delete { background: #fee2e2; }
   .icon-sold { background: #e5e7eb; }
+  .icon-warehouse { background: #d7ccc8; }
 
   .log-title {
     font-weight: 700;
@@ -207,6 +210,7 @@
   .badge-correction { background: #f3e8ff; color: #6b21a8; }
   .badge-delete { background: #fee2e2; color: #991b1b; }
   .badge-sold { background: #e5e7eb; color: #374151; }
+  .badge-warehouse { background: #efebe9; color: #4e342e; }
 
   .log-meta {
     text-align: right;
@@ -296,6 +300,8 @@
          class="btn-chip {% if event_filter == 'correction' %}active-purple{% endif %}">Undo</a>
       <a href="?date={{ selected_date_str }}&event=delete{% if promoter_filter %}&promoter={{ promoter_filter|urlencode }}{% endif %}"
          class="btn-chip {% if event_filter == 'delete' %}active-red{% endif %}">Nuke</a>
+      <a href="?date={{ selected_date_str }}&event=warehouse{% if promoter_filter %}&promoter={{ promoter_filter|urlencode }}{% endif %}"
+         class="btn-chip {% if event_filter == 'warehouse' %}active-brown{% endif %}">Warehouse</a>
     </div>
 
     {% if promoter_names %}
@@ -311,11 +317,12 @@
     {% endif %}
 
     {% for log in logs %}
-    <div class="log-card
+      <div class="log-card
       {% if log.event_type == 'delete' and 'sold/accounted' in log.label %}is-delete
       {% elif log.event_type == 'delete' %}is-delete
       {% elif log.event_type == 'return' %}is-return
       {% elif log.event_type == 'correction' %}is-correction
+      {% elif log.event_type == 'warehouse' %}is-warehouse
       {% endif %}">
 
       <div class="icon-bubble
@@ -323,11 +330,14 @@
         {% elif log.event_type == 'return' %}icon-return
         {% elif log.event_type == 'correction' %}icon-correction
         {% elif log.event_type == 'delete' and 'sold/accounted' in log.label %}icon-sold
+        {% elif log.event_type == 'warehouse' %}icon-warehouse
         {% else %}icon-delete{% endif %}">
+        
         {% if log.event_type == 'dispatch' %}🚀
         {% elif log.event_type == 'return' %}↩️
         {% elif log.event_type == 'correction' %}🔧
         {% elif log.event_type == 'delete' and 'sold/accounted' in log.label %}💰
+        {% elif log.event_type == 'warehouse' %}📦
         {% else %}🗑️{% endif %}
       </div>
 
@@ -338,6 +348,7 @@
           {% elif log.event_type == 'correction' %}Undo / correction
           {% elif log.event_type == 'delete' and 'sold/accounted' in log.label %}Sold / accounted
           {% elif log.event_type == 'delete' and 'fully returned' in log.label %}Cleared (fully returned)
+          {% elif log.event_type == 'warehouse' %}Warehouse Adjustment
           {% else %}Nuked entry{% endif %}
           · {{ log.product_name }}
         </div>
@@ -350,15 +361,19 @@
           {% elif log.event_type == 'return' %}badge-return
           {% elif log.event_type == 'correction' %}badge-correction
           {% elif log.event_type == 'delete' and 'sold/accounted' in log.label %}badge-sold
+          {% elif log.event_type == 'warehouse' %}badge-warehouse
           {% else %}badge-delete{% endif %}">
+          
           {% if log.event_type == 'dispatch' %}Issued
           {% elif log.event_type == 'return' %}Unsold / Restored
           {% elif log.event_type == 'correction' %}Adjusted
           {% elif log.event_type == 'delete' and 'sold/accounted' in log.label %}Sold · Not restored
           {% elif log.event_type == 'delete' and 'fully returned' in log.label %}Cleared · Bookkeeping
+          {% elif log.event_type == 'warehouse' %}Stock Updated
           {% else %}Removed{% endif %}
         </span>
       </div>
+      <!-- ... rest of the card ... -->
 
       <div class="log-meta">
         <div class="log-qty">{{ log.cartons }} crt · {{ log.pieces }} pcs</div>

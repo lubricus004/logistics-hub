@@ -639,6 +639,7 @@
   </div>
 
 <!-- Live Ledger (Today) -->
+<!-- Live Ledger -->
 <div class="section">
   <div class="section-title">Live Ledger (Today)</div>
 
@@ -658,7 +659,14 @@
       <tbody>
         {% for d in container.items %}
         <tr>
-          <td><strong>{{ d.product.name }}</strong></td>
+          <td>
+            <strong>{{ d.product.name }}</strong>
+            <!-- Buttons are back under the product name -->
+            <div style="margin-top: 5px; padding: 0 5% 0 5%;">
+              <button type="button" onclick="openNukeModal('{{ d.id }}', '{{ d.promoter.name }}', '{{ d.cash_owed }}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer; padding:0;">🗑️</button>
+              <button type="button" onclick="openUndoModal('{{ d.id }}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer; padding:0;">↩️</button>
+            </div>
+          </td>
           <td style="text-align:center">{{ d.cartons_taken }}c / {{ d.pieces_taken }}p</td>
           <td style="text-align:center">{{ d.cartons_returned }}c / {{ d.pieces_returned }}p</td>
           <td style="text-align:right">₵{{ d.cash_owed }}</td>
@@ -667,29 +675,16 @@
       </tbody>
     </table>
 
-      <!-- Bottom Row: Buttons on the left, Total on the right -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px 5% 10px 5%; border-top: 1px solid var(--border);">
-      
-      <!-- Left Side: Buttons -->
-      <div style="display: flex; gap: 10px;">
-        {% for d in container.items %}
-          <button type="button" onclick="openNukeModal('{{ d.id }}', '{{ d.promoter.name }}', '{{ d.cash_owed }}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer; padding:0;">🗑️</button>
-          <button type="button" onclick="openUndoModal('{{ d.id }}')" style="background:none; border:none; font-size:1.2rem; cursor:pointer; padding:0;">↩️</button>
-        {% endfor %}
-      </div>
-
-      <!-- Right Side: Total Cash -->
-      <div style="font-weight: 700;">
-        Total: <span style="color: var(--accent); font-size: 1.15rem;">₵{{ container.grand_total }}</span>
-      </div>
-      
-    </div>
+    <!-- Total is back on its own clean line at the bottom -->
+    <div class="ledger-total" style="margin-top: 15px; text-align: right; font-weight: 700;">
+      Total: <span style="color: var(--accent); font-size: 1.15rem;">₵{{ container.grand_total }}</span>
     </div>
   </div>
   {% empty %}
   <p style="text-align:center; color: var(--text-secondary); padding: 32px 16px;">No dispatches today</p>
   {% endfor %}
 </div>
+
 
 <!-- Edit Promoter Modal -->
 <div id="editModal" class="modal">

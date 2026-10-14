@@ -105,11 +105,14 @@ class ActivityLog(models.Model):
     RETURN = "return"
     CORRECTION = "correction"
     DELETE = "delete"
+    WAREHOUSE = "warehouse"
     EVENT_CHOICES = [
         (DISPATCH, "Dispatched Out"),
         (RETURN, "Returned — Not Sold"),
         (CORRECTION, "Correction"),
         (DELETE, "Deleted Mistake"),
+        (CLEAR, "Cleared Entry"),
+        (WAREHOUSE, "Warehouse Adjustment"),
     ]
     created_at = models.DateTimeField(auto_now_add=True)
     business_date = models.DateField(db_index=True)
